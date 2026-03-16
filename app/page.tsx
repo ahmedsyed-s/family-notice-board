@@ -115,7 +115,7 @@ export default function RetroBoard() {
         
         {newNoticeAlert && (
           <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#FF4B4B] text-white border-4 border-[#1A1A1A] p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] animate-bounce">
-            <p className="text-2xl">! NEW MESSAGE RECEIVED !</p>
+            <p className="text-2xl">! Something's Cooking !</p>
           </div>
         )}
 
