@@ -2,24 +2,30 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 
-// 1. DYNAMIC DANCING TITLE
-function RetroTitle({ text }: { text: string }) {
+// DYNAMIC DANCING TITLE
+function RetroTitle({ text, showVersion }: { text: string; showVersion?: boolean }) {
   return (
-    <div className="flex justify-center mb-10 mt-6 select-none flex-wrap">
-      {text.split('').map((char, i) => (
-        <span
-          key={i}
-          className="text-5xl font-pixel tracking-tighter animate-dance inline-block"
-          style={{
-            color: '#FFD166',
-            animationDelay: `${i * 0.1}s`,
-            textShadow: `-3px -3px 0 #1A1A1A, 3px -3px 0 #1A1A1A, -3px 3px 0 #1A1A1A, 3px 3px 0 #1A1A1A, 6px 6px 0px rgba(0,0,0,0.2)`,
-            marginRight: char === ' ' ? '15px' : '2px'
-          }}
-        >
-          {char}
-        </span>
-      ))}
+    <div className="flex flex-col items-center mb-10 mt-6 select-none">
+      <div className="flex justify-center flex-wrap">
+        {text.split('').map((char, i) => (
+          <span
+            key={i}
+            className="text-5xl font-pixel tracking-tighter animate-dance inline-block"
+            style={{
+              color: '#FFD166',
+              animationDelay: `${i * 0.1}s`,
+              textShadow: `-3px -3px 0 #1A1A1A, 3px -3px 0 #1A1A1A, -3px 3px 0 #1A1A1A, 3px 3px 0 #1A1A1A, 6px 6px 0px rgba(0,0,0,0.2)`,
+              marginRight: char === ' ' ? '15px' : '2px'
+            }}
+          >
+            {char}
+          </span>
+        ))}
+      </div>
+      {/* 2. VERSION NAME ONLY SHOWS IF PROP IS TRUE */}
+      {showVersion && (
+        <span className="font-pixel text-xl text-[#1A1A1A] mt-2 opacity-80">v2.4.2</span>
+      )}
     </div>
   );
 }
@@ -32,10 +38,10 @@ export default function RetroBoard() {
   const [mounted, setMounted] = useState(false)
   const [newNoticeAlert, setNewNoticeAlert] = useState(false)
   
-  // DM, Search & Seen States
   const [view, setView] = useState<'public' | 'dm'>('public')
   const [dmRecipient, setDmRecipient] = useState('')
   const [hasUnreadDM, setHasUnreadDM] = useState(false)
+  const [hasUnreadPublic, setHasUnreadPublic] = useState(false)
   const [activeUsers, setActiveUsers] = useState<string[]>([])
   const [userSearch, setUserSearch] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
@@ -44,10 +50,8 @@ export default function RetroBoard() {
     setMounted(true)
     const savedUser = localStorage.getItem('board_username')
     if (savedUser) setUsername(savedUser)
-    
     fetchNotices()
     
-    // REAL-TIME LISTENER
     const channel = supabase
       .channel('schema-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, (payload) => {
@@ -58,22 +62,17 @@ export default function RetroBoard() {
           const isPublic = !payload.new.recipient;
           const iAmAuthor = payload.new.author === currentMe;
 
-          // Always update list if message involves the user
           if (isPublic || isForMe || iAmAuthor) {
             setNotices((prev) => [payload.new, ...prev])
           }
 
-          // Trigger alert for recipients or public (excluding author)
           if ((isPublic && !iAmAuthor) || isForMe) {
             setNewNoticeAlert(true)
             setTimeout(() => setNewNoticeAlert(false), 4000)
             
-            // Set red dot if not currently on DM tab
-            // Note: We check view via a reference or just set it; 
-            // the UI will handle showing it only when appropriate.
-            if (isForMe) {
-              setHasUnreadDM(true)
-            }
+            const currentTab = window.localStorage.getItem('current_view') || 'public';
+            if (isForMe && currentTab !== 'dm') setHasUnreadDM(true);
+            if (isPublic && currentTab !== 'public') setHasUnreadPublic(true);
           }
         } 
         else if (payload.eventType === 'UPDATE') {
@@ -86,9 +85,8 @@ export default function RetroBoard() {
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, []) // Empty dependency array ensures listener never resets/stales
+  }, [])
 
-  // Effect to update user list whenever notices change
   useEffect(() => {
     if (notices.length > 0) {
       const authors = notices.map(n => n.author).filter(Boolean).map(a => a.toLowerCase())
@@ -119,13 +117,13 @@ export default function RetroBoard() {
 
   const handleLogout = () => {
     localStorage.removeItem('board_username')
+    localStorage.removeItem('current_view')
     setUsername(''); setTempName('')
   }
 
   const handleSend = async () => {
     if (!text.trim() || !username) return
     if (view === 'dm' && !dmRecipient) return alert("Select a recipient!")
-    
     const payload = { 
       content: text, 
       author: username,
@@ -143,53 +141,76 @@ export default function RetroBoard() {
 
   const switchView = (newView: 'public' | 'dm') => {
     setView(newView)
+    window.localStorage.setItem('current_view', newView);
     if (newView === 'dm') {
       setHasUnreadDM(false)
       markMessagesAsRead()
+    } else {
+      setHasUnreadPublic(false)
     }
   }
 
   const filteredUsers = activeUsers.filter(u => u.toLowerCase().includes(userSearch.toLowerCase()))
-
   const filteredNotices = notices.filter(n => {
     if (view === 'public') return !n.recipient;
     return (n.recipient === username || (n.author === username && n.recipient));
   })
 
   if (!mounted) return null
+  
+  // --- LOGIN SCREEN (With Version Name) ---
   if (!username) {
     return (
       <div className="min-h-screen bg-[#87CEEB] flex flex-col items-center justify-center p-4 font-pixel text-[#1A1A1A]">
-        <RetroTitle text="FAMILY BOARD" />
+        <RetroTitle text="FAMILY BOARD" showVersion={true} />
         <div className="bg-[#FDFD96] border-[4px] border-[#1A1A1A] p-8 shadow-[10px_10px_0px_0px_rgba(26,26,26,1)] max-w-xs w-full">
           <h1 className="text-3xl mb-6 text-center leading-none uppercase">System Access</h1>
           <input className="w-full border-[3px] border-[#1A1A1A] p-3 text-2xl mb-4 bg-white outline-none" value={tempName} onChange={(e) => setTempName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleLogin()} placeholder="TYPE NAME..." />
-          <button onClick={handleLogin} className="w-full bg-[#1A1A1A] text-[#FDFD96] py-3 text-2xl active:translate-y-1 transition-all">ENTER</button>
+          <button onClick={handleLogin} className="w-full bg-[#1A1A1A] text-[#FDFD96] py-3 text-2xl active:translate-y-1 transition-all uppercase">Enter</button>
         </div>
       </div>
     )
   }
 
+  // --- MAIN BOARD (Without Version Name) ---
   return (
     <div className="min-h-screen bg-[#87CEEB] relative pb-40 font-pixel text-[#1A1A1A]">
       <div className="fixed bottom-0 w-full h-48 bg-[#2D6A4F] clip-mountain z-0 opacity-95"></div>
       <div className="relative z-10 max-w-lg mx-auto p-6">
-        <RetroTitle text="FAMILY BOARD" />
+        <RetroTitle text="FAMILY BOARD" showVersion={false} />
+        
         {newNoticeAlert && (
           <div className="fixed top-5 left-1/2 -translate-x-1/2 z-50 bg-[#FF4B4B] text-white border-4 border-[#1A1A1A] p-4 shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] animate-bounce text-center">
             <p className="text-2xl uppercase">! Something's Cooking !</p>
           </div>
         )}
+
         <div className="flex gap-2 mb-4">
-            <button onClick={() => switchView('public')} className={`flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'public' ? 'bg-[#FFD166]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}>Public</button>
-            <button onClick={() => switchView('dm')} className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}>
-              DM {hasUnreadDM && <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />}
+            <button 
+              onClick={() => switchView('public')} 
+              className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'public' ? 'bg-[#FFD166]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}
+            >
+              Public
+              {hasUnreadPublic && (
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />
+              )}
+            </button>
+            <button 
+              onClick={() => switchView('dm')} 
+              className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}
+            >
+              DM 
+              {hasUnreadDM && (
+                <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />
+              )}
             </button>
         </div>
+
         <div className="flex justify-between items-center mb-8 bg-white/90 p-4 border-[3px] border-[#1A1A1A] shadow-[5px_5px_0px_0px_rgba(26,26,26,1)]">
           <span className="text-xl font-bold uppercase">USER: {username}</span>
           <button onClick={handleLogout} className="text-lg text-red-700 underline">LOGOUT</button>
         </div>
+
         <div className={`mb-12 p-5 border-[4px] border-[#1A1A1A] shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-[#FFD166]'}`}>
           {view === 'dm' && (
             <div className="relative mb-2">
@@ -207,6 +228,7 @@ export default function RetroBoard() {
           <textarea className="w-full border-[3px] border-[#1A1A1A] p-4 text-2xl bg-white outline-none h-28 resize-none mb-4 leading-tight" value={text} onChange={(e) => setText(e.target.value)} placeholder={view === 'dm' ? "Type secret message..." : "What's on your mind?..."} />
           <button onClick={handleSend} className="w-full bg-[#1A1A1A] text-white py-3 text-3xl active:scale-[0.97] transition-all uppercase">{view === 'dm' ? 'Send DM' : 'Send Notice'}</button>
         </div>
+
         <div className="space-y-10">
           {filteredNotices.map((n, index) => (
             <div key={n.id} className={`p-6 border-[4px] border-[#1A1A1A] shadow-[10px_10px_0px_0px_rgba(26,26,26,1)] transform ${index % 2 === 0 ? 'rotate-1' : '-rotate-1'} ${n.recipient ? 'bg-white' : ['bg-[#FFF1A8]', 'bg-[#B4E1FF]', 'bg-[#FFC4C4]', 'bg-[#C1E1C1]'][index % 4]}`}>
@@ -232,7 +254,7 @@ export default function RetroBoard() {
             </div>
           ))}
           {filteredNotices.length === 0 && (
-              <p className="text-center text-xl opacity-50">Nothing here yet...</p>
+              <p className="text-center text-xl opacity-50 uppercase">Nothing here yet...</p>
           )}
         </div>
       </div>
