@@ -1,0 +1,104 @@
+1
+npx create-next-app@latest family-notice-board
+
+TypeScript? Yes (Highly recommended for your portfolio)
+
+ESLint? Yes
+
+Tailwind CSS? Yes (This is what we will use for design)
+
+src/ directory? No (Easier to manage for beginners)
+
+App Router? Yes (The modern standard)
+
+Customize default import alias? No
+
+
+2
+cd family-notice-board
+C:\Users\Dipto\family-notice-board
+npm run dev
+
+
+3
+
+Supabase
+
+Project URL:
+https://isnlziczamlhfakiendc.supabase.co
+
+Anon public key:
+eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imlzbmx6aWN6YW1saGZha2llbmRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzM1OTgzOTAsImV4cCI6MjA4OTE3NDM5MH0.HxxzXkAkrqGzH0Bob5-9W1DLS129XuuF37Y4cFYIXTU
+
+
+
+--Git setup:
+
+git config --global user.name "ahmedsyed-s"
+git config --global user.email "ahmedsyedsaqalain@gmail.com"
+
+Adding existing repo:
+
+git remote add origin https://github.com/ahmedsyed-s/family-notice-board.git
+
+for any change:
+
+git add .
+git commit -m "Your message here"
+git push
+
+git add .
+git commit -m "Version 2.0: 8 Bit"
+git push
+
+git add .
+git commit -m "Version 2.1: Final 8-bit board with persistent login and real-time"
+git push
+
+git add .
+git commit -m "Version 2.2.1: Final 8-bit board with persistent login and real-time"
+git push
+
+git add .
+git commit -m "Version 2.3: added year to timestamp"
+git push
+
+git add .
+git commit -m "Version 2.4: added DM, Seen Receipts, User search for DMs."
+git push
+
+git add .
+git commit -m "Version 2.4.1: DM fix."
+git push
+
+git add .
+git commit -m "Version 2.4.2: Unread Mark for PUBLIC. Version Name."
+git push
+
+git add .
+git commit -m "Sync before travel
+git push
+
+
+For pc and laptop sync:
+before work:
+git pull origin main
+
+Summary:
+
+Layer			Technology		Purpose
+Frontend		Next.js / React		The "Face" of the app (UI)
+Styling	Tailwind 	CSS			Making it look clean and modern
+Database		Supabase (Postgres)	Storing the notices forever
+Real-time		Supabase Realtime	Making messages pop up instantly
+Source Control		GitHub			Saving your progress and history
+Hosting/CI-CD		Vercel			Making it live and updating it automatically
+
+Version 2.3
+
+Features till date: User specific login, Login session is held, Realtime notice update, User can delete their own notes.
+
+
+Version 2.4 Retro 8-Bit UI, Dancing Pixel Title, Mountain Silhouette, VT323 Typography, Persistent Login (LocalStorage), Public Notice Board, Private DM System, Searchable User Dropdown, Real-time Database Sync, Instant Popup Notifications, Smart Alert Filtering (Author Suppression), Unread DM Pulse Indicator, Seen Receipts (✓ SEEN), Individual Note Deletion, Dynamic User Discovery, Full Date/Year Timestamps, Safe Data Handling (Null-Safety), Mobile Responsive Design.
+
+Version 2.4 Features till date: User specific login, Login session is held, Realtime notice update, User can delete their own notes, Private DM. Searchable Users. Unread DM Pulse, Seen Receipts.
