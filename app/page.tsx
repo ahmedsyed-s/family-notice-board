@@ -146,7 +146,7 @@ export default function RetroBoard() {
                 <div className="flex flex-col">
                   <span className="text-2xl font-bold uppercase">BY: {n.author || 'ANONYMOUS'}</span>
                   <span className="text-lg opacity-70">
-                    {new Date(n.created_at).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(n.created_at).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
                 {n.author === username && (
