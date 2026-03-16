@@ -44,32 +44,37 @@ export default function RetroBoard() {
     setMounted(true)
     const savedUser = localStorage.getItem('board_username')
     if (savedUser) setUsername(savedUser)
+    
     fetchNotices()
     
+    // REAL-TIME LISTENER
     const channel = supabase
       .channel('schema-db-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'notices' }, (payload) => {
+        const currentMe = localStorage.getItem('board_username');
+
         if (payload.eventType === 'INSERT') {
-          const currentMe = localStorage.getItem('board_username');
           const isForMe = payload.new.recipient === currentMe;
           const isPublic = !payload.new.recipient;
           const iAmAuthor = payload.new.author === currentMe;
 
-          // Always add to local state if relevant to the user
+          // Always update list if message involves the user
           if (isPublic || isForMe || iAmAuthor) {
             setNotices((prev) => [payload.new, ...prev])
           }
 
-          // ONLY trigger popup if it's someone ELSE'S public post or a DM for ME
+          // Trigger alert for recipients or public (excluding author)
           if ((isPublic && !iAmAuthor) || isForMe) {
             setNewNoticeAlert(true)
             setTimeout(() => setNewNoticeAlert(false), 4000)
             
-            if (isForMe && view !== 'dm') {
+            // Set red dot if not currently on DM tab
+            // Note: We check view via a reference or just set it; 
+            // the UI will handle showing it only when appropriate.
+            if (isForMe) {
               setHasUnreadDM(true)
             }
           }
-          updateUserList([...notices, payload.new])
         } 
         else if (payload.eventType === 'UPDATE') {
           setNotices((prev) => prev.map(n => n.id === payload.new.id ? payload.new : n))
@@ -79,29 +84,30 @@ export default function RetroBoard() {
         }
       })
       .subscribe()
+
     return () => { supabase.removeChannel(channel) }
-  }, [view, notices, username])
+  }, []) // Empty dependency array ensures listener never resets/stales
+
+  // Effect to update user list whenever notices change
+  useEffect(() => {
+    if (notices.length > 0) {
+      const authors = notices.map(n => n.author).filter(Boolean).map(a => a.toLowerCase())
+      const recipients = notices.map(n => n.recipient).filter(Boolean).map(r => r.toLowerCase())
+      const uniqueUsers = Array.from(new Set([...authors, ...recipients]))
+        .filter(u => u !== username && u !== 'anonymous')
+        .sort()
+      setActiveUsers(uniqueUsers)
+    }
+  }, [notices, username])
 
   const fetchNotices = async () => {
     const { data } = await supabase.from('notices').select('*').order('created_at', { ascending: false })
-    if (data) {
-      setNotices(data)
-      updateUserList(data)
-    }
+    if (data) setNotices(data)
   }
 
   const markMessagesAsRead = async () => {
     if (!username) return
     await supabase.from('notices').update({ is_read: true }).eq('recipient', username).eq('is_read', false)
-  }
-
-  const updateUserList = (allNotices: any[]) => {
-    const authors = allNotices.map(n => n.author).filter(Boolean).map(a => a.toLowerCase())
-    const recipients = allNotices.map(n => n.recipient).filter(Boolean).map(r => r.toLowerCase())
-    const uniqueUsers = Array.from(new Set([...authors, ...recipients]))
-      .filter(u => u !== username && u !== 'anonymous')
-      .sort()
-    setActiveUsers(uniqueUsers)
   }
 
   const handleLogin = () => {
@@ -175,8 +181,8 @@ export default function RetroBoard() {
           </div>
         )}
         <div className="flex gap-2 mb-4">
-            <button onClick={() => switchView('public')} className={`flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'public' ? 'bg-[#FFD166]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl`}>PUBLIC</button>
-            <button onClick={() => switchView('dm')} className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl`}>
+            <button onClick={() => switchView('public')} className={`flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'public' ? 'bg-[#FFD166]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}>Public</button>
+            <button onClick={() => switchView('dm')} className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}>
               DM {hasUnreadDM && <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />}
             </button>
         </div>
@@ -225,6 +231,9 @@ export default function RetroBoard() {
               <p className="text-3xl leading-[1.1] break-words">{n.content}</p>
             </div>
           ))}
+          {filteredNotices.length === 0 && (
+              <p className="text-center text-xl opacity-50">Nothing here yet...</p>
+          )}
         </div>
       </div>
       <style jsx>{`
