@@ -22,7 +22,6 @@ function RetroTitle({ text, showVersion }: { text: string; showVersion?: boolean
           </span>
         ))}
       </div>
-      {/* 2. VERSION NAME ONLY SHOWS IF PROP IS TRUE */}
       {showVersion && (
         <span className="font-pixel text-xl text-[#1A1A1A] mt-2 opacity-80">v2.4.2</span>
       )}
@@ -45,6 +44,22 @@ export default function RetroBoard() {
   const [activeUsers, setActiveUsers] = useState<string[]>([])
   const [userSearch, setUserSearch] = useState('')
   const [showUserDropdown, setShowUserDropdown] = useState(false)
+
+  // FUNCTION: Mark ALL my unread DMs as read
+  const markAllAsRead = async () => {
+    const currentMe = localStorage.getItem('board_username');
+    if (!currentMe) return;
+    await supabase
+      .from('notices')
+      .update({ is_read: true })
+      .eq('recipient', currentMe)
+      .eq('is_read', false);
+  }
+
+  // FUNCTION: Mark a SPECIFIC message as read (Triggered by Realtime)
+  const markSpecificAsRead = async (id: number) => {
+    await supabase.from('notices').update({ is_read: true }).eq('id', id);
+  }
 
   useEffect(() => {
     setMounted(true)
@@ -71,12 +86,22 @@ export default function RetroBoard() {
             setTimeout(() => setNewNoticeAlert(false), 4000)
             
             const currentTab = window.localStorage.getItem('current_view') || 'public';
-            if (isForMe && currentTab !== 'dm') setHasUnreadDM(true);
+            
+            if (isForMe) {
+              if (currentTab === 'dm') {
+                // If I am looking at the DM tab, mark this SPECIFIC new ID as read immediately
+                markSpecificAsRead(payload.new.id);
+              } else {
+                setHasUnreadDM(true);
+              }
+            }
             if (isPublic && currentTab !== 'public') setHasUnreadPublic(true);
           }
         } 
         else if (payload.eventType === 'UPDATE') {
-          setNotices((prev) => prev.map(n => n.id === payload.new.id ? payload.new : n))
+          setNotices((prev) => 
+            prev.map(n => n.id === payload.new.id ? { ...n, ...payload.new } : n)
+          )
         } 
         else if (payload.eventType === 'DELETE') {
           setNotices((prev) => prev.filter(n => n.id !== payload.old.id))
@@ -87,6 +112,7 @@ export default function RetroBoard() {
     return () => { supabase.removeChannel(channel) }
   }, [])
 
+  // Sync users list whenever notices change
   useEffect(() => {
     if (notices.length > 0) {
       const authors = notices.map(n => n.author).filter(Boolean).map(a => a.toLowerCase())
@@ -101,11 +127,6 @@ export default function RetroBoard() {
   const fetchNotices = async () => {
     const { data } = await supabase.from('notices').select('*').order('created_at', { ascending: false })
     if (data) setNotices(data)
-  }
-
-  const markMessagesAsRead = async () => {
-    if (!username) return
-    await supabase.from('notices').update({ is_read: true }).eq('recipient', username).eq('is_read', false)
   }
 
   const handleLogin = () => {
@@ -144,7 +165,7 @@ export default function RetroBoard() {
     window.localStorage.setItem('current_view', newView);
     if (newView === 'dm') {
       setHasUnreadDM(false)
-      markMessagesAsRead()
+      markAllAsRead()
     } else {
       setHasUnreadPublic(false)
     }
@@ -158,7 +179,6 @@ export default function RetroBoard() {
 
   if (!mounted) return null
   
-  // --- LOGIN SCREEN (With Version Name) ---
   if (!username) {
     return (
       <div className="min-h-screen bg-[#87CEEB] flex flex-col items-center justify-center p-4 font-pixel text-[#1A1A1A]">
@@ -172,7 +192,6 @@ export default function RetroBoard() {
     )
   }
 
-  // --- MAIN BOARD (Without Version Name) ---
   return (
     <div className="min-h-screen bg-[#87CEEB] relative pb-40 font-pixel text-[#1A1A1A]">
       <div className="fixed bottom-0 w-full h-48 bg-[#2D6A4F] clip-mountain z-0 opacity-95"></div>
@@ -186,35 +205,25 @@ export default function RetroBoard() {
         )}
 
         <div className="flex gap-2 mb-4">
-            <button 
-              onClick={() => switchView('public')} 
-              className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'public' ? 'bg-[#FFD166]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}
-            >
+            <button onClick={() => switchView('public')} className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'public' ? 'bg-[#FFD166]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}>
               Public
-              {hasUnreadPublic && (
-                <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />
-              )}
+              {hasUnreadPublic && <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />}
             </button>
-            <button 
-              onClick={() => switchView('dm')} 
-              className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}
-            >
+            <button onClick={() => switchView('dm')} className={`relative flex-1 py-2 border-4 border-[#1A1A1A] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-white'} shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] text-2xl uppercase`}>
               DM 
-              {hasUnreadDM && (
-                <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />
-              )}
+              {hasUnreadDM && <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 border-2 border-black rounded-full animate-pulse" />}
             </button>
         </div>
 
         <div className="flex justify-between items-center mb-8 bg-white/90 p-4 border-[3px] border-[#1A1A1A] shadow-[5px_5px_0px_0px_rgba(26,26,26,1)]">
           <span className="text-xl font-bold uppercase">USER: {username}</span>
-          <button onClick={handleLogout} className="text-lg text-red-700 underline">LOGOUT</button>
+          <button onClick={handleLogout} className="text-lg text-red-700 underline uppercase">Logout</button>
         </div>
 
         <div className={`mb-12 p-5 border-[4px] border-[#1A1A1A] shadow-[6px_6px_0px_0px_rgba(26,26,26,1)] ${view === 'dm' ? 'bg-[#A0C4FF]' : 'bg-[#FFD166]'}`}>
           {view === 'dm' && (
             <div className="relative mb-2">
-              <input className="w-full border-[3px] border-[#1A1A1A] p-2 text-xl bg-white outline-none" placeholder={dmRecipient ? `TO: ${dmRecipient.toUpperCase()}` : "SEARCH USER..."} value={userSearch} onFocus={() => setShowUserDropdown(true)} onChange={(e) => setUserSearch(e.target.value)} />
+              <input className="w-full border-[3px] border-[#1A1A1A] p-2 text-xl bg-white outline-none uppercase" placeholder={dmRecipient ? `TO: ${dmRecipient.toUpperCase()}` : "SEARCH USER..."} value={userSearch} onFocus={() => setShowUserDropdown(true)} onChange={(e) => setUserSearch(e.target.value)} />
               {showUserDropdown && (
                 <div className="absolute left-0 right-0 mt-1 bg-white border-[3px] border-[#1A1A1A] z-50 max-h-40 overflow-y-auto shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
                   {filteredUsers.length > 0 ? filteredUsers.map(user => (
@@ -241,8 +250,9 @@ export default function RetroBoard() {
                     <span className="text-lg opacity-70">
                         {new Date(n.created_at).toLocaleString([], { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                     </span>
+                    {/* THE SEEN BADGE */}
                     {n.recipient && n.author === username && n.is_read && (
-                        <span className="text-blue-600 font-bold text-sm">✓ SEEN</span>
+                        <span className="text-blue-600 font-bold text-sm uppercase">✓ Seen</span>
                     )}
                   </div>
                 </div>
@@ -253,9 +263,6 @@ export default function RetroBoard() {
               <p className="text-3xl leading-[1.1] break-words">{n.content}</p>
             </div>
           ))}
-          {filteredNotices.length === 0 && (
-              <p className="text-center text-xl opacity-50 uppercase">Nothing here yet...</p>
-          )}
         </div>
       </div>
       <style jsx>{`

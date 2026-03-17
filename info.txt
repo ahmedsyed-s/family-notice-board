@@ -19,6 +19,8 @@ cd family-notice-board
 C:\Users\Dipto\family-notice-board
 npm run dev
 
+Laptop:
+cd D:\Projects\family-notice-board
 
 3
 
@@ -76,7 +78,11 @@ git commit -m "Version 2.4.2: Unread Mark for PUBLIC. Version Name."
 git push
 
 git add .
-git commit -m "Sync before travel
+git commit -m "Sync before travel"
+git push
+
+git add .
+git commit -m "Version 2.4.3: Fixed DM seen issue."
 git push
 
 
