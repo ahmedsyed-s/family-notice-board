@@ -15,7 +15,7 @@ function RetroTitle({ text, showVersion }: { text: string; showVersion?: boolean
           </span>
         ))}
       </div>
-      {showVersion && <span className="font-pixel text-xl text-[#1A1A1A] mt-2 opacity-80 uppercase">v3.3.5</span>}
+      {showVersion && <span className="font-pixel text-xl text-[#1A1A1A] mt-2 opacity-80 uppercase">v3.3.6 |  © Mim</span>}
     </div>
   );
 }
