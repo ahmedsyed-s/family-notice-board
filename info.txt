@@ -85,6 +85,10 @@ git add .
 git commit -m "Version 2.4.3: Fixed DM seen issue."
 git push
 
+git add .
+git commit -m "Version 3.3.4: PIN added"
+git push
+
 
 For pc and laptop sync:
 before work:
@@ -108,3 +112,5 @@ Features till date: User specific login, Login session is held, Realtime notice 
 Version 2.4 Retro 8-Bit UI, Dancing Pixel Title, Mountain Silhouette, VT323 Typography, Persistent Login (LocalStorage), Public Notice Board, Private DM System, Searchable User Dropdown, Real-time Database Sync, Instant Popup Notifications, Smart Alert Filtering (Author Suppression), Unread DM Pulse Indicator, Seen Receipts (✓ SEEN), Individual Note Deletion, Dynamic User Discovery, Full Date/Year Timestamps, Safe Data Handling (Null-Safety), Mobile Responsive Design.
 
 Version 2.4 Features till date: User specific login, Login session is held, Realtime notice update, User can delete their own notes, Private DM. Searchable Users. Unread DM Pulse, Seen Receipts.
+
+Version 3.3.4 Update: Default pin 1234 added for all users. You can change your pin. Seen receipt issue fixed.
