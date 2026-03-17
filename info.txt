@@ -89,6 +89,9 @@ git add .
 git commit -m "Version 3.3.4: PIN added"
 git push
 
+git add .
+git commit -m "Version 3.3.5: Minor fixes."
+git push
 
 For pc and laptop sync:
 before work:

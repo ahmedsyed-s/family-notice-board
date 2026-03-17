@@ -15,7 +15,7 @@ function RetroTitle({ text, showVersion }: { text: string; showVersion?: boolean
           </span>
         ))}
       </div>
-      {showVersion && <span className="font-pixel text-xl text-[#1A1A1A] mt-2 opacity-80 uppercase">v3.3.4-stable</span>}
+      {showVersion && <span className="font-pixel text-xl text-[#1A1A1A] mt-2 opacity-80 uppercase">v3.3.5</span>}
     </div>
   );
 }
@@ -135,7 +135,7 @@ export default function RetroBoard() {
         <RetroTitle text="FAMILY BOARD" showVersion={true} />
         <div className="bg-[#FDFD96] border-[4px] border-[#1A1A1A] p-8 shadow-[10px_10px_0px_0px_rgba(26,26,26,1)] max-w-xs w-full">
           <input className="w-full border-[3px] border-[#1A1A1A] p-3 text-2xl mb-2 bg-white outline-none uppercase" placeholder="NAME" value={tempName} onChange={(e) => setTempName(e.target.value)} />
-          <input className="w-full border-[3px] border-[#1A1A1A] p-3 text-2xl mb-4 bg-white outline-none" placeholder="PIN" type="password" maxLength={4} value={tempPin} onChange={(e) => setTempPin(e.target.value)} />
+          <input className="w-full border-[3px] border-[#1A1A1A] p-3 text-2xl mb-4 bg-white outline-none" placeholder="PIN (Default: 1234)" type="password" maxLength={4} value={tempPin} onChange={(e) => setTempPin(e.target.value)} />
           <button onClick={handleLogin} className="w-full bg-[#1A1A1A] text-[#FDFD96] py-3 text-2xl active:translate-y-1 transition-all uppercase">Login</button>
         </div>
       </div>
@@ -188,7 +188,7 @@ export default function RetroBoard() {
             </div>
           )}
           <textarea className="w-full border-[3px] border-[#1A1A1A] p-4 text-2xl bg-white outline-none h-28 resize-none mb-4 leading-tight" value={text} onChange={(e) => setText(e.target.value)} placeholder="Type here..." />
-          <button onClick={handleSend} className="w-full bg-[#1A1A1A] text-white py-3 text-3xl active:scale-[0.97] transition-all uppercase">Send</button>
+          <button onClick={handleSend} className="w-full bg-[#1A1A1A] text-white py-3 text-3xl active:scale-[0.97] transition-all uppercase">Post</button>
         </div>
 
         <div className="space-y-10">
